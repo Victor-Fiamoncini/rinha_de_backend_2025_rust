@@ -1,0 +1,11 @@
+[package]
+name = "rinha_de_backend_2025_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+chrono = { version = "0.4.41", features = ["serde"] }
+dotenv = "0.15.0"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.141"

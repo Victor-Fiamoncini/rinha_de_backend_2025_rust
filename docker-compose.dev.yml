@@ -1,0 +1,73 @@
+version: "3.5"
+
+services:
+  api01: &api
+    image: api
+    hostname: api01
+    build: .
+    depends_on:
+      - redis
+    expose:
+      - "3000"
+    environment:
+      API_PORT: 3000
+      PAYMENT_PROCESSOR_URL_DEFAULT: http://payment-processor-default:8080
+      PAYMENT_PROCESSOR_URL_FALLBACK: http://payment-processor-fallback:8080
+      REDIS_URL: redis:6379
+    networks:
+      - payment-processor
+      - rinha-de_backend-rust-api
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "50MB"
+
+  api02:
+    <<: *api
+    hostname: api02
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api01
+      - api02
+    ports:
+      - "9999:9999"
+    networks:
+      - payment-processor
+      - rinha-de_backend-rust-api
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "100MB"
+
+  redis:
+    image: redis:7.2-alpine
+    hostname: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - rinha-de_backend-rust-api
+    command: redis-server --save "" --appendonly no --maxclients 20000
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "150MB"
+
+networks:
+  payment-processor:
+    external: true
+  rinha-de_backend-rust-api:
+    driver: bridge

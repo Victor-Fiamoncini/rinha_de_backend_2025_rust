@@ -1,0 +1,10 @@
+{
+    "name": "Victor Fiamoncini",
+    "social": [],
+    "source-code-repo": "",
+    "langs": ["rust"],
+    "storages": ["memory"],
+    "messaging": ["redis"],
+    "load-balancers": ["nginx"],
+    "other-technologies": ["actix"]
+}
