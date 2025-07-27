@@ -1,4 +1,4 @@
-FROM rust:1.78-slim-buster AS build
+FROM rust:1.88-slim-bullseye AS build
 
 RUN cargo new --bin app
 
