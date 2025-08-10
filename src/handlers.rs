@@ -4,6 +4,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
+use serde_json::json;
 
 use crate::{
     types::{CreatePaymentDTO, GetPaymentsSummaryDTO},
@@ -32,5 +33,13 @@ pub async fn get_payments_summary(
     let from = query.from;
     let to = query.to;
 
-    ""
+    match state
+        .services
+        .get_payment_summary_service
+        .get_payment_summary(from, to)
+        .await
+    {
+        Ok(_) => Ok(Json(json!("Payment summary fetched successfully"))),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
 }

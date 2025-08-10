@@ -30,10 +30,14 @@ async fn main() {
 
     let config = Config::new();
 
-    let payments_queue = Queue::new(config.clone(), "@pending_payments_queue").await;
+    let pending_payments_queue = Queue::new(config.clone(), "@pending_payments_queue").await;
+    let completed_payments_queue = Queue::new(config.clone(), "@completed_payments_queue").await;
 
     let app_state = AppState {
-        services: Arc::new(Services::new(payments_queue)),
+        services: Arc::new(Services::new(
+            pending_payments_queue,
+            completed_payments_queue,
+        )),
     };
 
     let app = Router::new()
