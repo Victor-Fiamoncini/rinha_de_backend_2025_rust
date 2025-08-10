@@ -7,7 +7,7 @@ use axum::{
 use serde_json::json;
 
 use crate::{
-    types::{CreatePaymentDTO, GetPaymentsSummaryDTO},
+    dtos::{CreatePaymentDTO, GetPaymentsSummaryDTO},
     AppState,
 };
 

@@ -1,4 +1,4 @@
-use crate::{queue::Queue, types::CreatePaymentDTO};
+use crate::{dtos::CreatePaymentDTO, queue::Queue};
 
 #[derive(Clone)]
 pub struct CreatePaymentService {

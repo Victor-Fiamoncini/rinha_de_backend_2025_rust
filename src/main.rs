@@ -1,8 +1,9 @@
 mod config;
+mod consumers;
+mod dtos;
 mod handlers;
 mod queue;
 mod services;
-mod types;
 
 use std::sync::Arc;
 
@@ -14,9 +15,10 @@ use dotenv::dotenv;
 
 use crate::{
     config::Config,
+    consumers::PaymentConsumer,
     handlers::{create_payment, get_payments_summary},
     queue::Queue,
-    services::Services,
+    services::{CreateExternalPaymentService, Services},
 };
 
 #[derive(Clone)]
@@ -35,10 +37,20 @@ async fn main() {
 
     let app_state = AppState {
         services: Arc::new(Services::new(
-            pending_payments_queue,
-            completed_payments_queue,
+            pending_payments_queue.clone(),
+            completed_payments_queue.clone(),
         )),
     };
+
+    let create_external_payment_service = CreateExternalPaymentService::new(config.clone());
+
+    let payment_consumer = PaymentConsumer::new(
+        create_external_payment_service,
+        config.clone(),
+        pending_payments_queue.clone(),
+    );
+
+    payment_consumer.consume_payments().await;
 
     let app = Router::new()
         .route("/payments", post(create_payment))
@@ -48,6 +60,8 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(("0.0.0.0", config.api_port))
         .await
         .unwrap();
+
+    println!("🦀 Crab server listening on 0.0.0.0:{}", config.api_port);
 
     axum::serve(listener, app).await.unwrap();
 }
