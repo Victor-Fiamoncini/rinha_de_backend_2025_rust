@@ -3,7 +3,7 @@ mod get_payment_summary_service;
 
 use crate::{
     queue::Queue,
-    services::{
+    service::{
         create_payment_service::CreatePaymentService,
         get_payment_summary_service::GetPaymentSummaryService,
     },

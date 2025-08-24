@@ -1,8 +1,8 @@
 mod config;
-mod dtos;
-mod handlers;
+mod dto;
 mod queue;
-mod services;
+mod route;
+mod service;
 
 use std::sync::Arc;
 
@@ -15,9 +15,9 @@ use tracing_subscriber::fmt;
 
 use crate::{
     config::Config,
-    handlers::{create_payment, get_payments_summary},
     queue::Queue,
-    services::Services,
+    route::{create_payment, get_payments_summary},
+    service::Services,
 };
 
 #[derive(Clone)]
