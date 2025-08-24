@@ -3,7 +3,7 @@ use std::time::Duration;
 use reqwest::{Client, ClientBuilder};
 use tracing::info;
 
-use crate::{config::Config, dtos::PaymentDTO};
+use crate::{config::Config, dto::PaymentDTO};
 
 pub enum PaymentProcessors {
     Default,

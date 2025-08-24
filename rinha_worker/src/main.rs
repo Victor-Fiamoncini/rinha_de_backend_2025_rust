@@ -1,20 +1,20 @@
 mod config;
-mod consumers;
-mod dtos;
+mod consumer;
+mod dto;
 mod queue;
-mod services;
+mod service;
 
 use tracing::info;
 use tracing_subscriber::fmt;
 
 use crate::{
     config::Config,
-    consumers::PaymentConsumer,
+    consumer::PaymentConsumer,
     queue::Queue,
-    services::{CreateExternalPaymentService, CreateInternalPaymentService},
+    service::{CreateExternalPaymentService, CreateInternalPaymentService},
 };
 
-const NUM_WORKERS: usize = 1;
+const NUM_WORKERS: u8 = 1;
 
 #[tokio::main]
 async fn main() {
@@ -44,7 +44,7 @@ async fn main() {
         );
 
         let handle = tokio::spawn(async move {
-            info!("Worker {} started", worker_id);
+            info!("Worker {} started", worker_id + 1);
 
             payment_consumer.consume_payments().await;
         });

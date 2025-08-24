@@ -4,9 +4,9 @@ use chrono::Utc;
 use tracing::{error, info};
 
 use crate::{
-    dtos::PaymentDTO,
+    dto::PaymentDTO,
     queue::Queue,
-    services::{CreateExternalPaymentService, CreateInternalPaymentService, PaymentProcessors},
+    service::{CreateExternalPaymentService, CreateInternalPaymentService, PaymentProcessors},
 };
 
 pub struct PaymentConsumer {
