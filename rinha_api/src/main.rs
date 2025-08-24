@@ -10,6 +10,8 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use tracing::info;
+use tracing_subscriber::fmt;
 
 use crate::{
     config::Config,
@@ -25,6 +27,13 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
+    fmt()
+        .with_target(false)
+        .with_line_number(false)
+        .with_file(false)
+        .compact()
+        .init();
+
     let config = Config::new();
 
     let pending_payments_queue = Queue::new(config.clone(), "@pending_payments_queue").await;
@@ -46,7 +55,7 @@ async fn main() {
         .await
         .unwrap();
 
-    println!("🦀 rinha_api listening on 0.0.0.0:{}", config.api_port);
+    info!("🦀 rinha_api listening on 0.0.0.0:{}", config.api_port);
 
     axum::serve(listener, app).await.unwrap();
 }

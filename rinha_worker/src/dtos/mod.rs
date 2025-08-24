@@ -1,3 +1,3 @@
 mod payment;
 
-pub use payment::CreateExternalPaymentDTO;
+pub use payment::PaymentDTO;

@@ -1,3 +1,5 @@
 mod create_external_payment_service;
+mod create_internal_payment_service;
 
 pub use create_external_payment_service::{CreateExternalPaymentService, PaymentProcessors};
+pub use create_internal_payment_service::CreateInternalPaymentService;

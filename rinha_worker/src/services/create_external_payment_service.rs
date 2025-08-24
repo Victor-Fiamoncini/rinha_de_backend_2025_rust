@@ -1,8 +1,9 @@
 use std::time::Duration;
 
 use reqwest::{Client, ClientBuilder};
+use tracing::info;
 
-use crate::{config::Config, dtos::CreateExternalPaymentDTO};
+use crate::{config::Config, dtos::PaymentDTO};
 
 pub enum PaymentProcessors {
     Default,
@@ -36,7 +37,7 @@ impl CreateExternalPaymentService {
     pub async fn create_external_payment(
         &self,
         payment_processor: PaymentProcessors,
-        payment: CreateExternalPaymentDTO,
+        payment: PaymentDTO,
     ) -> Result<(), &'static str> {
         let url = match payment_processor {
             PaymentProcessors::Default => {
@@ -47,7 +48,7 @@ impl CreateExternalPaymentService {
             }
         };
 
-        println!("Sending payment to {}: {:?}", url, payment);
+        info!("Sending payment to {}: {:?}", url, payment);
 
         let response = self
             .http_client

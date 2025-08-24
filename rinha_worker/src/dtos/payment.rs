@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CreateExternalPaymentDTO {
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct PaymentDTO {
     #[serde(rename = "requestedAt")]
     #[serde(default)]
     pub requested_at: String,

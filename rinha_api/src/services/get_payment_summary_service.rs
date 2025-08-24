@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use tracing::info;
 
 use crate::queue::Queue;
 
@@ -17,7 +18,7 @@ impl GetPaymentSummaryService {
         from: DateTime<Utc>,
         to: DateTime<Utc>,
     ) -> Result<(), &'static str> {
-        println!("Fetching payment summary from {} to {}", from, to);
+        info!("Fetching payment summary from {} to {}", from, to);
 
         Ok(())
     }
