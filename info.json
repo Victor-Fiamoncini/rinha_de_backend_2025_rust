@@ -1,10 +1,10 @@
 {
     "name": "Victor Fiamoncini",
-    "social": [],
-    "source-code-repo": "",
+    "social": ["https://github.com/Victor-Fiamoncini"],
+    "source-code-repo": "https://github.com/Victor-Fiamoncini/rinha_de_backend_2025_rust",
     "langs": ["rust"],
     "storages": ["memory"],
     "messaging": ["redis"],
     "load-balancers": ["nginx"],
-    "other-technologies": ["actix"]
+    "other-technologies": ["axum", "tokio"]
 }
