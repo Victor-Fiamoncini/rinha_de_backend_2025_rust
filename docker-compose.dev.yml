@@ -1,31 +1,50 @@
 version: "3.5"
 
 services:
-  api01: &api
-    image: api
-    hostname: api01
-    build: .
+  rinha-api-01: &api
+    hostname: rinha-api-01
+    build:
+      context: .
+      dockerfile: ./rinha_api/Dockerfile
     depends_on:
       - redis
     expose:
       - "3000"
     environment:
-      API_PORT: 3000
-      PAYMENT_PROCESSOR_URL_DEFAULT: http://payment-processor-default:8080
-      PAYMENT_PROCESSOR_URL_FALLBACK: http://payment-processor-fallback:8080
-      REDIS_URL: redis:6379
+      - API_PORT=3000
+      - REDIS_URL=redis://redis:6379
     networks:
       - payment-processor
-      - rinha-de_backend-rust-api
+      - rinha-de-backend-rust
     deploy:
       resources:
         limits:
           cpus: "0.25"
           memory: "50MB"
 
-  api02:
+  rinha-api-02:
     <<: *api
-    hostname: api02
+    hostname: rinha-api-02
+
+  rinha-worker:
+    hostname: rinha-worker
+    build:
+      context: .
+      dockerfile: ./rinha_worker/Dockerfile
+    depends_on:
+      - redis
+    environment:
+      - PAYMENT_PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
+      - PAYMENT_PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - payment-processor
+      - rinha-de-backend-rust
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "50MB"
 
   nginx:
     image: nginx:1.25-alpine
@@ -33,13 +52,13 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - api01
-      - api02
+      - rinha-api-01
+      - rinha-api-02
     ports:
       - "9999:9999"
     networks:
       - payment-processor
-      - rinha-de_backend-rust-api
+      - rinha-de-backend-rust
     deploy:
       resources:
         limits:
@@ -52,7 +71,8 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - rinha-de_backend-rust-api
+      - payment-processor
+      - rinha-de-backend-rust
     command: redis-server --save "" --appendonly no --maxclients 20000
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -69,5 +89,5 @@ services:
 networks:
   payment-processor:
     external: true
-  rinha-de_backend-rust-api:
+  rinha-de-backend-rust:
     driver: bridge

@@ -26,5 +26,6 @@ rust-project.json
 
 ### Personal folders
 /payment-processor
+/rinha-test
 
 # End of https://www.toptal.com/developers/gitignore/api/rust,rust-analyzer
