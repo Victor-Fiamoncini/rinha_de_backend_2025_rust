@@ -47,6 +47,8 @@ impl CreateExternalPaymentService {
             }
         };
 
+        println!("Sending payment to {}: {:?}", url, payment);
+
         let response = self
             .http_client
             .post(&url)

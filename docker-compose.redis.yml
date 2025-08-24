@@ -1,0 +1,25 @@
+services:
+  redis:
+    image: redis:7.2-alpine
+    hostname: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - rinha-de-backend-rust
+    command: redis-server --save "" --appendonly no --maxclients 20000
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "150MB"
+networks:
+  payment-processor:
+    external: true
+  rinha-de-backend-rust:
+    driver: bridge

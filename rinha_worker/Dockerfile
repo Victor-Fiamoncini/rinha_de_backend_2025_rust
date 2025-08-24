@@ -14,6 +14,6 @@ RUN cargo build --release
 
 FROM debian:buster-slim
 
-COPY --from=build /app/target/release/rinha_de_backend_2025_rust /app/rinha_de_backend_2025_rust
+COPY --from=build /app/target/release/rinha_worker /app/rinha_worker
 
-CMD "/app/rinha_de_backend_2025_rust"
+CMD "/app/rinha_worker"

@@ -1,8 +1,5 @@
-mod create_external_payment_service;
 mod create_payment_service;
 mod get_payment_summary_service;
-
-pub use create_external_payment_service::{CreateExternalPaymentService, PaymentProcessors};
 
 use crate::{
     queue::Queue,
