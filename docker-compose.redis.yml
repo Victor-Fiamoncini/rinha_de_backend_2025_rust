@@ -18,6 +18,7 @@ services:
         limits:
           cpus: "0.5"
           memory: "150MB"
+
 networks:
   payment-processor:
     external: true
