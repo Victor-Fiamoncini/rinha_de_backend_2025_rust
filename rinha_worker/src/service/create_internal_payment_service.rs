@@ -1,4 +1,4 @@
-use crate::{dto::PaymentDTO, queue::Queue};
+use crate::{dto::CompletedPaymentDTO, queue::Queue};
 
 #[derive(Clone)]
 pub struct CreateInternalPaymentService {
@@ -10,7 +10,7 @@ impl CreateInternalPaymentService {
         CreateInternalPaymentService { queue }
     }
 
-    pub async fn create_payment(&self, payment: PaymentDTO) -> Result<(), &'static str> {
+    pub async fn create_payment(&self, payment: CompletedPaymentDTO) -> Result<(), &'static str> {
         let json_parsed_payment = match serde_json::to_string(&payment) {
             Ok(value) => value,
             Err(_) => return Err("Failed to serialize payment JSON to string"),

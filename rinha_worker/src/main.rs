@@ -18,12 +18,7 @@ const NUM_WORKERS: u8 = 1;
 
 #[tokio::main]
 async fn main() {
-    fmt()
-        .with_target(false)
-        .with_line_number(false)
-        .with_file(false)
-        .compact()
-        .init();
+    fmt().compact().init();
 
     let config = Config::new();
 
@@ -46,7 +41,9 @@ async fn main() {
         let handle = tokio::spawn(async move {
             info!("Worker {} started", worker_id + 1);
 
-            payment_consumer.consume_payments().await;
+            loop {
+                payment_consumer.consume_payments().await;
+            }
         });
 
         handles.push(handle);

@@ -30,4 +30,13 @@ impl Queue {
             Err(_) => Err("Failed to enqueue message on Redis queue"),
         }
     }
+
+    pub async fn get_all(&self) -> Result<Vec<String>, &'static str> {
+        let mut connection = self.connection.clone();
+
+        match connection.lrange::<_, Vec<String>>(self.name, 0, -1).await {
+            Ok(messages) => Ok(messages),
+            Err(_) => Err("Failed to retrieve messages from Redis queue"),
+        }
+    }
 }

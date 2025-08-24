@@ -3,12 +3,10 @@ use std::time::Duration;
 use reqwest::{Client, ClientBuilder};
 use tracing::info;
 
-use crate::{config::Config, dto::PaymentDTO};
-
-pub enum PaymentProcessors {
-    Default,
-    Fallback,
-}
+use crate::{
+    config::Config,
+    dto::{PaymentProcessor, PendingPaymentDTO},
+};
 
 #[derive(Clone)]
 pub struct CreateExternalPaymentService {
@@ -36,14 +34,14 @@ impl CreateExternalPaymentService {
 
     pub async fn create_external_payment(
         &self,
-        payment_processor: PaymentProcessors,
-        payment: PaymentDTO,
+        payment_processor: PaymentProcessor,
+        payment: PendingPaymentDTO,
     ) -> Result<(), &'static str> {
         let url = match payment_processor {
-            PaymentProcessors::Default => {
+            PaymentProcessor::Default => {
                 format!("{}/payments", self.config.payment_processor_default_url)
             }
-            PaymentProcessors::Fallback => {
+            PaymentProcessor::Fallback => {
                 format!("{}/payments", self.config.payment_processor_fallback_url)
             }
         };
