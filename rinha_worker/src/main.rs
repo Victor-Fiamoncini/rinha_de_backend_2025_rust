@@ -14,11 +14,11 @@ use crate::{
     service::{CreateExternalPaymentService, CreateInternalPaymentService},
 };
 
-const NUM_WORKERS: u8 = 1;
+const NUM_WORKERS: u8 = 5;
 
 #[tokio::main]
 async fn main() {
-    fmt().compact().init();
+    fmt().compact().with_file(false).init();
 
     let config = Config::new();
 
@@ -56,5 +56,5 @@ async fn main() {
 
     futures::future::join_all(handles).await;
 
-    info!("🦀 All rinha_worker workers have terminated. Shutting down...");
+    info!("🦀 rinha_worker workers have terminated. Shutting down...");
 }

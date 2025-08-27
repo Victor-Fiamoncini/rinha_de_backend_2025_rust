@@ -27,7 +27,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
-    fmt().compact().init();
+    fmt().compact().with_file(false).init();
 
     let config = Config::new();
 
