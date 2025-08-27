@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use reqwest::{Client, ClientBuilder};
-use tracing::info;
 
 use crate::{
     config::Config,
@@ -45,8 +44,6 @@ impl CreateExternalPaymentService {
                 format!("{}/payments", self.config.payment_processor_fallback_url)
             }
         };
-
-        info!("Sending payment to {}: {:?}", url, payment);
 
         let response = self
             .http_client
