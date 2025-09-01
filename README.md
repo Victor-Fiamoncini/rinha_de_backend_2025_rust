@@ -7,6 +7,7 @@ Minha versão em Rust com o framework web Axum para a rinha de backend - 2025 (f
 - Rust v1.88
 - Axum v0.8.4
 - Tokio v1.0.0
+- Postgres v16.2
 - Redis v7.2
 - Nginx v1.25
 
