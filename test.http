@@ -1,5 +1,4 @@
 ### Global Variables
-@paymentProcessorDefaultBaseUrl = http://127.0.0.1:8001
 @rinhaApiBaseUrl = http://127.0.0.1:3000
 
 ### Creates a new payment on Rinha API
@@ -7,21 +6,9 @@ POST {{rinhaApiBaseUrl}}/payments HTTP/1.1
 Content-Type: application/json
 
 {
-    "correlationId": "4a7901b8-7d26-4d9d-aa19-4dc1c7cf60b5",
+    "correlationId": "e6b72929-f0cf-438d-9951-1e424c778d89",
     "amount": 19.90
 }
 
 ### Fetches payments summary
 GET {{rinhaApiBaseUrl}}/payments-summary HTTP/1.1
-# GET {{rinhaApiBaseUrl}}/payments-summary?from=2020-07-10T12:34:56.000Z&to=2020-07-10T12:35:56.000Z HTTP/1.1
-# GET {{rinhaApiBaseUrl}}/payments-summary?from=2020-07-10T12:34:56.000Z HTTP/1.1
-# GET {{rinhaApiBaseUrl}}/payments-summary?to=2020-07-10T12:35:56.000Z HTTP/1.1
-
-### Creates a new payment on Payment Processor
-POST {{paymentProcessorDefaultBaseUrl}}/payments HTTP/1.1
-Content-Type: application/json
-
-{
-    "correlationId": "4a7901b8-7d26-4d9d-aa19-4dc1c7cf60b5",
-    "amount": 19.90
-}
