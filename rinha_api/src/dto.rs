@@ -1,36 +1,30 @@
-use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreatePaymentDTO {
     #[serde(rename = "correlationId")]
     pub correlation_id: String,
-    pub amount: f64,
+    pub amount: Decimal,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GetPaymentsSummaryDTO {
-    pub from: Option<DateTime<Utc>>,
-    pub to: Option<DateTime<Utc>>,
+    pub from: Option<String>,
+    pub to: Option<String>,
 }
 
-#[derive(Deserialize)]
-pub struct CompletedPaymentDTO {
-    pub amount: f64,
-    pub processor_name: String,
-    pub created_at: String,
-}
-
-#[derive(Serialize)]
-pub struct ProcessorSummaryDTO {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PaymentMetricDTO {
     #[serde(rename = "totalRequests")]
     pub total_requests: u64,
     #[serde(rename = "totalAmount")]
-    pub total_amount: f64,
+    #[serde(serialize_with = "crate::serializers::serialize")]
+    pub total_amount: Decimal,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PaymentSummaryDTO {
-    pub default: ProcessorSummaryDTO,
-    pub fallback: ProcessorSummaryDTO,
+    pub default: PaymentMetricDTO,
+    pub fallback: PaymentMetricDTO,
 }
