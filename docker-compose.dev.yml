@@ -5,12 +5,19 @@ services:
       context: .
       dockerfile: ./rinha_api/Dockerfile
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
     expose:
       - "3000"
     environment:
       - API_PORT=3000
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
       - REDIS_URL=redis://redis:6379
     networks:
       - payment-processor
@@ -18,8 +25,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.25"
-          memory: "50MB"
+          cpus: "0.2"
+          memory: "25MB"
 
   rinha-api-02:
     <<: *api
@@ -31,10 +38,18 @@ services:
       context: .
       dockerfile: ./rinha_worker/Dockerfile
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - PAYMENT_PROCESSOR_DEFAULT_URL=http://payment-processor-default:8080
       - PAYMENT_PROCESSOR_FALLBACK_URL=http://payment-processor-fallback:8080
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
       - REDIS_URL=redis://redis:6379
     networks:
       - payment-processor
@@ -42,15 +57,16 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.6"
-          memory: "100MB"
+          cpus: "0.4"
+          memory: "50MB"
 
   nginx:
     image: nginx:1.25-alpine
     container_name: nginx
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
+      - postgres
       - redis
       - rinha-api-01
       - rinha-api-02
@@ -63,11 +79,12 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: "50MB"
+          memory: "25MB"
 
   redis:
     image: redis:7.2-alpine
     hostname: redis
+    container_name: redis
     ports:
       - "6379:6379"
     networks:
@@ -80,8 +97,47 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.2"
-          memory: "100MB"
+          cpus: "0.25"
+          memory: "50MB"
+
+  postgres:
+    image: postgres:16.2-bookworm
+    hostname: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./config/init.sql:/docker-entrypoint-initdb.d/init-db.sql
+    command: >
+      postgres -p 5432
+          -c max_wal_size=1GB
+          -c checkpoint_timeout=600
+          -c shared_buffers=256MB
+          -c max_connections=5000
+          -c synchronous_commit=off
+          -c log_statement=none
+          -c commit_delay=100000
+          -c fsync=off
+          -c max_parallel_workers=0
+          -c autovacuum=off
+          -c log_duration=off
+          -c log_checkpoints=0
+          -c log_min_error_statement='panic'
+    environment:
+      - POSTGRES_PASSWORD=postgres
+    networks:
+      - rinha-de-backend-rust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "175MB"
 
 networks:
   payment-processor:
