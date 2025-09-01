@@ -3,8 +3,8 @@
     "social": ["https://github.com/Victor-Fiamoncini"],
     "source-code-repo": "https://github.com/Victor-Fiamoncini/rinha_de_backend_2025_rust",
     "langs": ["rust"],
-    "storages": ["memory"],
+    "storages": ["postgres", "redis"],
     "messaging": ["redis"],
     "load-balancers": ["nginx"],
-    "other-technologies": ["axum", "tokio"]
+    "other-technologies": ["axum", "reqwest", "tokio"]
 }
