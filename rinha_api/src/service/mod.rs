@@ -2,6 +2,7 @@ mod create_payment_service;
 mod get_payment_summary_service;
 
 use crate::{
+    database::Database,
     queue::Queue,
     service::{
         create_payment_service::CreatePaymentService,
@@ -16,10 +17,10 @@ pub struct Services {
 }
 
 impl Services {
-    pub fn new(pending_payments_queue: Queue, completed_payments_queue: Queue) -> Self {
+    pub fn new(completed_payments_database: Database, pending_payments_queue: Queue) -> Self {
         Services {
             create_payment_service: CreatePaymentService::new(pending_payments_queue),
-            get_payment_summary_service: GetPaymentSummaryService::new(completed_payments_queue),
+            get_payment_summary_service: GetPaymentSummaryService::new(completed_payments_database),
         }
     }
 }

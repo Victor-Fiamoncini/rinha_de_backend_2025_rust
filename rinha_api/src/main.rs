@@ -1,7 +1,9 @@
 mod config;
+mod database;
 mod dto;
 mod queue;
 mod route;
+mod serializers;
 mod service;
 
 use std::sync::Arc;
@@ -15,6 +17,7 @@ use tracing_subscriber::fmt;
 
 use crate::{
     config::Config,
+    database::Database,
     queue::Queue,
     route::{create_payment, get_payments_summary},
     service::Services,
@@ -31,13 +34,13 @@ async fn main() {
 
     let config = Config::new();
 
+    let completed_payments_database = Database::new(config.clone()).await;
     let pending_payments_queue = Queue::new(config.clone(), "@pending_payments_queue").await;
-    let completed_payments_queue = Queue::new(config.clone(), "@completed_payments_queue").await;
 
     let app_state = AppState {
         services: Arc::new(Services::new(
+            completed_payments_database,
             pending_payments_queue,
-            completed_payments_queue,
         )),
     };
 
