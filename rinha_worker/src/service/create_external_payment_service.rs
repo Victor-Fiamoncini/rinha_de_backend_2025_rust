@@ -1,10 +1,11 @@
 use std::time::Duration;
 
 use reqwest::{Client, ClientBuilder};
+use tracing::{error, info};
 
 use crate::{
     config::Config,
-    dto::{PaymentProcessor, PendingPaymentDTO},
+    dto::{PaymentDTO, PaymentProcessor},
 };
 
 #[derive(Clone)]
@@ -16,12 +17,8 @@ pub struct CreateExternalPaymentService {
 impl CreateExternalPaymentService {
     pub fn new(config: Config) -> Self {
         let http_client = ClientBuilder::new()
-            .pool_max_idle_per_host(100)
-            .pool_idle_timeout(Duration::from_secs(30))
-            .timeout(Duration::from_millis(10000))
-            .connect_timeout(Duration::from_millis(1000))
-            .tcp_keepalive(Duration::from_secs(30))
-            .tcp_nodelay(true)
+            .connect_timeout(Duration::from_millis(100))
+            .timeout(Duration::from_millis(300))
             .build()
             .expect("Failed to create HTTP Client");
 
@@ -31,10 +28,10 @@ impl CreateExternalPaymentService {
         }
     }
 
-    pub async fn create_external_payment(
+    pub async fn execute(
         &self,
         payment_processor: PaymentProcessor,
-        payment: PendingPaymentDTO,
+        payment: PaymentDTO,
     ) -> Result<(), &'static str> {
         let url = match payment_processor {
             PaymentProcessor::Default => {
@@ -56,12 +53,25 @@ impl CreateExternalPaymentService {
         match response {
             Ok(response) => {
                 if response.status().is_success() {
+                    info!("Successfully created external payment");
+
                     return Ok(());
                 }
 
+                let body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "<failed to read body>".to_string());
+
+                error!("Failed to create external payment: {}", body);
+
                 Err("Failed to create external payment")
             }
-            Err(_) => Err("Failed to send external payment request"),
+            Err(_) => {
+                error!("Failed to send external payment request");
+
+                Err("Failed to send external payment request")
+            }
         }
     }
 }
