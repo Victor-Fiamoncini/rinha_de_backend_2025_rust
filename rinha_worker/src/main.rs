@@ -1,8 +1,11 @@
 mod config;
 mod consumer;
+mod database;
 mod dto;
 mod queue;
 mod service;
+
+use std::time::Duration;
 
 use tracing::info;
 use tracing_subscriber::fmt;
@@ -10,11 +13,10 @@ use tracing_subscriber::fmt;
 use crate::{
     config::Config,
     consumer::PaymentConsumer,
+    database::Database,
     queue::Queue,
     service::{CreateExternalPaymentService, CreateInternalPaymentService},
 };
-
-const NUM_WORKERS: u8 = 5;
 
 #[tokio::main]
 async fn main() {
@@ -23,38 +25,22 @@ async fn main() {
     let config = Config::new();
 
     let pending_payments_queue = Queue::new(config.clone(), "@pending_payments_queue").await;
-    let completed_payments_queue = Queue::new(config.clone(), "@completed_payments_queue").await;
+    let completed_payments_database = Database::new(config.clone()).await;
 
-    let create_external_payment = CreateExternalPaymentService::new(config.clone());
-    let create_internal_payment =
-        CreateInternalPaymentService::new(completed_payments_queue.clone());
+    let create_external_payment = CreateExternalPaymentService::new(config);
+    let create_internal_payment = CreateInternalPaymentService::new(completed_payments_database);
 
-    let mut handles = Vec::new();
-
-    for worker_id in 0..NUM_WORKERS {
-        let payment_consumer = PaymentConsumer::new(
-            create_external_payment.clone(),
-            create_internal_payment.clone(),
-            pending_payments_queue.clone(),
-        );
-
-        let handle = tokio::spawn(async move {
-            info!("Worker {} started", worker_id + 1);
-
-            loop {
-                payment_consumer.consume_payments().await;
-            }
-        });
-
-        handles.push(handle);
-    }
-
-    info!(
-        "🦀 rinha_worker running with {} worker threads",
-        NUM_WORKERS
+    let payment_consumer = PaymentConsumer::new(
+        create_external_payment,
+        create_internal_payment,
+        pending_payments_queue,
     );
 
-    futures::future::join_all(handles).await;
+    payment_consumer.consume_payments().await;
 
-    info!("🦀 rinha_worker workers have terminated. Shutting down...");
+    loop {
+        tokio::time::sleep(Duration::from_secs(60)).await;
+
+        info!("🦀 rinha_worker running...");
+    }
 }
