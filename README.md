@@ -10,7 +10,9 @@ Minha versão em Rust com o framework web Axum para a rinha de backend - 2025 (f
 - Redis v7.2
 - Nginx v1.25
 
-## Melhores resultados obtidos até agora (finalmente sem inconsistências 🙌)
+## Melhores resultados obtidos até agora
+
+Finalmente zero inconsistências 🙌, estou estudando como posso enviar requests para os dois serviços de pagamento de forma consistente...
 
 ![Screenshot](./.github/partial-results.png)
 
