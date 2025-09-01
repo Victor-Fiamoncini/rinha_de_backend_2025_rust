@@ -10,6 +10,10 @@ Minha versão em Rust com o framework web Axum para a rinha de backend - 2025 (f
 - Redis v7.2
 - Nginx v1.25
 
+## Melhores resultados obtidos até agora (finalmente sem inconsistências 🙌)
+
+![Screenshot](./.github/partial-results.png)
+
 ## Como iniciar
 
 Ambos os diretórios /payment-processor e /rinha-test (pertencentes ao repositõrio oficial da rinha) devem estar clonados na raiz deste projeto.
