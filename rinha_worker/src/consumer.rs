@@ -4,10 +4,13 @@ use chrono::Utc;
 use tracing::{error, info};
 
 use crate::{
-    dto::{CompletedPaymentDTO, PaymentProcessor, PendingPaymentDTO},
+    dto::{PaymentDTO, PaymentProcessor},
     queue::Queue,
     service::{CreateExternalPaymentService, CreateInternalPaymentService},
 };
+
+const NUMBER_OF_WORKERS: u8 = 5;
+const MAX_DEQUEUE_RETRIES: u8 = 3;
 
 pub struct PaymentConsumer {
     create_external_payment: CreateExternalPaymentService,
@@ -29,97 +32,67 @@ impl PaymentConsumer {
     }
 
     pub async fn consume_payments(&self) {
-        let dequeue_result = self.pending_payments_queue.dequeue().await;
+        let create_external_payment = self.create_external_payment.clone();
+        let create_internal_payment = self.create_internal_payment.clone();
+        let pending_payments_queue = self.pending_payments_queue.clone();
 
-        let pending_payment: Option<PendingPaymentDTO> = match dequeue_result {
-            Ok(Some(message)) => match serde_json::from_str::<PendingPaymentDTO>(&message) {
-                Ok(mut payment) => {
-                    payment.requested_at = Utc::now().to_rfc3339();
+        for worker_id in 0..NUMBER_OF_WORKERS {
+            let create_external_payment = create_external_payment.clone();
+            let create_internal_payment = create_internal_payment.clone();
+            let pending_payments_queue = pending_payments_queue.clone();
 
-                    Some(payment)
-                }
-                Err(e) => {
-                    info!("Failed to deserialize payment message: {}", e);
+            tokio::spawn(async move {
+                info!("🦀 rinha_worker -> worker {} started", worker_id + 1);
 
-                    None
-                }
-            },
-            Ok(None) => {
-                info!("No payment messages found, waiting...");
+                let mut consecutive_empty = 0;
 
-                tokio::time::sleep(Duration::from_millis(1)).await;
-
-                None
-            }
-            Err(_) => {
-                error!("Error while dequeuing payment message, retrying...");
-
-                tokio::time::sleep(Duration::from_millis(1)).await;
-
-                None
-            }
-        };
-
-        if let Some(pending_payment) = pending_payment {
-            let default_result = self
-                .create_external_payment
-                .create_external_payment(PaymentProcessor::Default, pending_payment.clone())
-                .await;
-
-            match default_result {
-                Ok(_) => {
-                    let completed_payment = CompletedPaymentDTO {
-                        amount: pending_payment.amount,
-                        processor_name: PaymentProcessor::Default,
-                        created_at: pending_payment.requested_at,
+                loop {
+                    let result = if consecutive_empty < MAX_DEQUEUE_RETRIES {
+                        pending_payments_queue.dequeue_left().await
+                    } else {
+                        pending_payments_queue.dequeue_left_blocking(0.1).await
                     };
 
-                    if let Err(e) = self
-                        .create_internal_payment
-                        .create_payment(completed_payment)
-                        .await
-                    {
-                        error!("Failed to create internal payment (default): {:?}", e);
-                    }
-                }
-                Err(_) => {
-                    let fallback_result = self
-                        .create_external_payment
-                        .create_external_payment(
-                            PaymentProcessor::Fallback,
-                            pending_payment.clone(),
-                        )
-                        .await;
+                    match result {
+                        Ok(Some(message)) => {
+                            consecutive_empty = 0;
 
-                    match fallback_result {
-                        Ok(_) => {
-                            let completed_payment = CompletedPaymentDTO {
-                                amount: pending_payment.amount,
-                                processor_name: PaymentProcessor::Fallback,
-                                created_at: pending_payment.requested_at,
+                            let mut payment = match serde_json::from_str::<PaymentDTO>(&message) {
+                                Ok(payment) => payment,
+                                Err(_) => continue,
                             };
 
-                            if let Err(e) = self
-                                .create_internal_payment
-                                .create_payment(completed_payment)
+                            payment.requested_at = Utc::now().to_rfc3339();
+
+                            match create_external_payment
+                                .execute(PaymentProcessor::Default, payment.clone())
                                 .await
                             {
-                                error!("Failed to create internal payment (fallback): {:?}", e);
-                            }
-                        }
-                        Err(_) => match serde_json::to_string(&pending_payment) {
-                            Ok(json) => {
-                                if let Err(e) = self.pending_payments_queue.enqueue(json).await {
-                                    error!("Failed to enqueue payment for requeue: {:?}", e);
+                                Ok(_) => {
+                                    payment.payment_processor = "default".to_string();
+
+                                    if let Err(_) = create_internal_payment.execute(payment).await {
+                                        error!("Failed to create internal payment (default)");
+                                    }
+                                }
+                                Err(_) => {
+                                    let _ = pending_payments_queue.enqueue(message).await;
                                 }
                             }
-                            Err(_) => {
-                                error!("Failed to serialize payment for requeue");
+                        }
+                        Ok(None) => {
+                            consecutive_empty += 1;
+
+                            if consecutive_empty <= MAX_DEQUEUE_RETRIES {
+                                tokio::time::sleep(Duration::from_millis(1)).await;
                             }
-                        },
+                        }
+                        Err(_) => {
+                            tokio::time::sleep(Duration::from_secs(1)).await;
+                        }
                     }
                 }
-            }
+            });
         }
     }
 }
