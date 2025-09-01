@@ -10,7 +10,7 @@ impl CreatePaymentService {
         CreatePaymentService { queue }
     }
 
-    pub async fn create_payment(&self, payment: CreatePaymentDTO) -> Result<(), &'static str> {
+    pub async fn execute(&self, payment: CreatePaymentDTO) -> Result<(), &'static str> {
         let json_parsed_payment = match serde_json::to_string(&payment) {
             Ok(value) => value,
             Err(_) => return Err("Failed to serialize payment JSON to string"),
