@@ -31,13 +31,29 @@ impl Queue {
         }
     }
 
-    pub async fn dequeue(&self) -> Result<Option<String>, &'static str> {
+    pub async fn dequeue_left(&self) -> Result<Option<String>, &'static str> {
         let mut connection = self.connection.clone();
 
         match connection.lpop::<_, Option<String>>(&self.name, None).await {
             Ok(Some(value)) => Ok(Some(value)),
             Ok(None) => Ok(None),
             Err(_) => Err("Failed to dequeue message from Redis queue"),
+        }
+    }
+
+    pub async fn dequeue_left_blocking(
+        &self,
+        timeout: f64,
+    ) -> Result<Option<String>, &'static str> {
+        let mut connection = self.connection.clone();
+
+        match connection
+            .blpop::<_, Option<(String, String)>>(&self.name, timeout)
+            .await
+        {
+            Ok(Some((_, value))) => Ok(Some(value)),
+            Ok(None) => Ok(None),
+            Err(_) => Err("Failed to blocking dequeue message from Redis queue"),
         }
     }
 }
