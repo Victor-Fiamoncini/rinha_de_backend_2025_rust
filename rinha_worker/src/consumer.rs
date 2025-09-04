@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use chrono::Utc;
-use tracing::{error, info};
+use tracing::info;
 
 use crate::{
     dto::{PaymentDTO, PaymentProcessor},
@@ -9,8 +9,8 @@ use crate::{
     service::{CreateExternalPaymentService, CreateInternalPaymentService},
 };
 
-const NUMBER_OF_WORKERS: u8 = 5;
-const MAX_DEQUEUE_RETRIES: u8 = 3;
+const MAX_DEQUEUE_RETRIES: usize = 3;
+const NUMBER_OF_WORKERS: usize = 5;
 
 pub struct PaymentConsumer {
     create_external_payment: CreateExternalPaymentService,
@@ -31,23 +31,19 @@ impl PaymentConsumer {
         }
     }
 
-    pub async fn consume_payments(&self) {
-        let create_external_payment = self.create_external_payment.clone();
-        let create_internal_payment = self.create_internal_payment.clone();
-        let pending_payments_queue = self.pending_payments_queue.clone();
-
+    pub async fn consume_payments(&self) -> () {
         for worker_id in 0..NUMBER_OF_WORKERS {
-            let create_external_payment = create_external_payment.clone();
-            let create_internal_payment = create_internal_payment.clone();
-            let pending_payments_queue = pending_payments_queue.clone();
+            let create_external_payment = self.create_external_payment.clone();
+            let create_internal_payment = self.create_internal_payment.clone();
+            let pending_payments_queue = self.pending_payments_queue.clone();
 
             tokio::spawn(async move {
                 info!("🦀 rinha_worker -> worker {} started", worker_id + 1);
 
-                let mut consecutive_empty = 0;
+                let mut empty_count: usize = 0;
 
                 loop {
-                    let result = if consecutive_empty < MAX_DEQUEUE_RETRIES {
+                    let result = if empty_count < MAX_DEQUEUE_RETRIES {
                         pending_payments_queue.dequeue_left().await
                     } else {
                         pending_payments_queue.dequeue_left_blocking(0.1).await
@@ -55,7 +51,7 @@ impl PaymentConsumer {
 
                     match result {
                         Ok(Some(message)) => {
-                            consecutive_empty = 0;
+                            empty_count = 0;
 
                             let mut payment = match serde_json::from_str::<PaymentDTO>(&message) {
                                 Ok(payment) => payment,
@@ -71,19 +67,17 @@ impl PaymentConsumer {
                                 Ok(_) => {
                                     payment.payment_processor = "default".to_string();
 
-                                    if let Err(_) = create_internal_payment.execute(payment).await {
-                                        error!("Failed to create internal payment (default)");
-                                    }
+                                    let _ = create_internal_payment.execute(payment).await;
                                 }
                                 Err(_) => {
-                                    let _ = pending_payments_queue.enqueue(message).await;
+                                    let _ = pending_payments_queue.enqueue_right(message).await;
                                 }
                             }
                         }
                         Ok(None) => {
-                            consecutive_empty += 1;
+                            empty_count += 1;
 
-                            if consecutive_empty <= MAX_DEQUEUE_RETRIES {
+                            if empty_count <= MAX_DEQUEUE_RETRIES {
                                 tokio::time::sleep(Duration::from_millis(1)).await;
                             }
                         }
