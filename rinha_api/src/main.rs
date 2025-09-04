@@ -3,7 +3,6 @@ mod database;
 mod dto;
 mod queue;
 mod route;
-mod serializers;
 mod service;
 
 use std::sync::Arc;
@@ -13,7 +12,7 @@ use axum::{
     Router,
 };
 use tracing::info;
-use tracing_subscriber::fmt;
+use tracing_subscriber;
 
 use crate::{
     config::Config,
@@ -30,7 +29,7 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
-    fmt().compact().with_file(false).init();
+    tracing_subscriber::fmt::init();
 
     let config = Config::new();
 
