@@ -22,7 +22,7 @@ impl Queue {
         Queue { connection, name }
     }
 
-    pub async fn enqueue(&self, message: String) -> Result<(), &'static str> {
+    pub async fn enqueue_right(&self, message: String) -> Result<(), &'static str> {
         let mut connection = self.connection.clone();
 
         match connection.rpush::<_, _, ()>(&self.name, message).await {

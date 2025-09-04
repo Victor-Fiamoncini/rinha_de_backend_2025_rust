@@ -17,7 +17,7 @@ pub struct CreateExternalPaymentService {
 impl CreateExternalPaymentService {
     pub fn new(config: Config) -> Self {
         let http_client = ClientBuilder::new()
-            .connect_timeout(Duration::from_millis(100))
+            .connect_timeout(Duration::from_millis(300))
             .timeout(Duration::from_millis(300))
             .build()
             .expect("Failed to create HTTP Client");
@@ -58,12 +58,7 @@ impl CreateExternalPaymentService {
                     return Ok(());
                 }
 
-                let body = response
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "<failed to read body>".to_string());
-
-                error!("Failed to create external payment: {}", body);
+                error!("Failed to create external payment");
 
                 Err("Failed to create external payment")
             }

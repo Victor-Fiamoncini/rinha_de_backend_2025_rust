@@ -8,7 +8,7 @@ mod service;
 use std::time::Duration;
 
 use tracing::info;
-use tracing_subscriber::fmt;
+use tracing_subscriber;
 
 use crate::{
     config::Config,
@@ -20,7 +20,7 @@ use crate::{
 
 #[tokio::main]
 async fn main() {
-    fmt().compact().with_file(false).init();
+    tracing_subscriber::fmt::init();
 
     let config = Config::new();
 
@@ -38,9 +38,9 @@ async fn main() {
 
     payment_consumer.consume_payments().await;
 
-    loop {
-        tokio::time::sleep(Duration::from_secs(60)).await;
+    info!("🦀 rinha_worker -> main thread started");
 
-        info!("🦀 rinha_worker running...");
+    loop {
+        tokio::time::sleep(Duration::from_secs(3600)).await;
     }
 }
