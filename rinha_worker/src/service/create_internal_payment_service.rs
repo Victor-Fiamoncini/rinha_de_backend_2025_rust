@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use tokio_postgres::types::ToSql;
 use tracing::{error, info};
 use uuid::Uuid;
@@ -16,12 +17,21 @@ impl CreateInternalPaymentService {
     }
 
     pub async fn execute(&self, payment: PaymentDTO) -> Result<(), &'static str> {
+        let amount = match Decimal::try_from(payment.amount) {
+            Ok(decimal) => decimal,
+            Err(_) => {
+                error!("Failed to parse amount to decimal");
+
+                return Err("Invalid amount format");
+            }
+        };
+
         let correlation_id = match Uuid::parse_str(&payment.correlation_id) {
             Ok(uuid) => uuid,
             Err(_) => {
                 error!("Failed to parse UUID '{}'", payment.correlation_id);
 
-                Uuid::new_v4()
+                return Err("Invalid correlation_id format");
             }
         };
 
@@ -30,11 +40,11 @@ impl CreateInternalPaymentService {
             Err(_) => {
                 error!("Failed to parse timestamp '{}'", payment.requested_at);
 
-                Utc::now()
+                return Err("Invalid requested_at format");
             }
         };
 
-        let naive_requested_at = requested_at.naive_utc();
+        let requested_at = requested_at.naive_utc();
 
         let fields = &[
             "amount",
@@ -44,10 +54,10 @@ impl CreateInternalPaymentService {
         ];
 
         let values: &[&(dyn ToSql + Sync)] = &[
-            &payment.amount,
+            &amount,
             &correlation_id,
             &payment.payment_processor,
-            &naive_requested_at,
+            &requested_at,
         ];
 
         match self.database.insert("payments", fields, values).await {
