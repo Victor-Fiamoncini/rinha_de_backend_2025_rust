@@ -1,4 +1,6 @@
-use deadpool_postgres::{Config as PostgresConfig, Pool, Runtime};
+use deadpool_postgres::{
+    Config as PostgresConfig, ManagerConfig, Pool, PoolConfig, RecyclingMethod, Runtime,
+};
 use tokio_postgres::{types::ToSql, NoTls};
 use tracing::{error, info};
 
@@ -11,17 +13,18 @@ pub struct Database {
 
 impl Database {
     pub async fn new(config: Config) -> Self {
-        let mut postgres_config = PostgresConfig::new();
-
-        postgres_config.host = Some(config.postgres_host);
-        postgres_config.port = Some(config.postgres_port);
-        postgres_config.user = Some(config.postgres_user);
-        postgres_config.password = Some(config.postgres_password);
-        postgres_config.dbname = Some(config.postgres_db);
-        postgres_config.manager = Some(deadpool_postgres::ManagerConfig {
-            recycling_method: deadpool_postgres::RecyclingMethod::Fast,
-        });
-        postgres_config.pool = Some(deadpool_postgres::PoolConfig::new(20));
+        let postgres_config = PostgresConfig {
+            host: Some(config.postgres_host),
+            port: Some(config.postgres_port),
+            user: Some(config.postgres_user),
+            password: Some(config.postgres_password),
+            dbname: Some(config.postgres_db),
+            manager: Some(ManagerConfig {
+                recycling_method: RecyclingMethod::Fast,
+            }),
+            pool: Some(PoolConfig::new(20)),
+            ..Default::default()
+        };
 
         let pool = postgres_config
             .create_pool(Some(Runtime::Tokio1), NoTls)
@@ -69,8 +72,8 @@ impl Database {
 
         match client.execute(query.as_str(), values).await {
             Ok(_) => Ok(()),
-            Err(err) => {
-                error!("Failed to insert into {}: {}", table, err);
+            Err(_) => {
+                error!("Failed to insert into {} table", table);
 
                 Err("Failed to insert")
             }
