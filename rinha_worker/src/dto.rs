@@ -12,6 +12,7 @@ pub struct PaymentDTO {
     pub requested_at: String,
 }
 
+#[derive(Clone, PartialEq)]
 pub enum PaymentProcessor {
     Default,
     Fallback,
