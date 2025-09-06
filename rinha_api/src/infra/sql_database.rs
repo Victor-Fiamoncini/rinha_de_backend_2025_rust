@@ -1,24 +1,24 @@
 use deadpool_postgres::{
     Config as PostgresConfig, ManagerConfig, Pool, PoolConfig, RecyclingMethod, Runtime,
 };
-use tokio_postgres::{types::ToSql, NoTls};
+use tokio_postgres::{types::ToSql, NoTls, Row};
 use tracing::{error, info};
 
 use crate::config::Config;
 
 #[derive(Clone)]
-pub struct Database {
+pub struct SqlDatabase {
     pool: Pool,
 }
 
-impl Database {
+impl SqlDatabase {
     pub async fn new(config: Config) -> Self {
         let postgres_config = PostgresConfig {
-            host: Some(config.postgres_host),
-            port: Some(config.postgres_port),
-            user: Some(config.postgres_user),
-            password: Some(config.postgres_password),
-            dbname: Some(config.postgres_db),
+            host: Some(config.postgres.host),
+            port: Some(config.postgres.port),
+            user: Some(config.postgres.user),
+            password: Some(config.postgres.password),
+            dbname: Some(config.postgres.db),
             manager: Some(ManagerConfig {
                 recycling_method: RecyclingMethod::Fast,
             }),
@@ -35,6 +35,8 @@ impl Database {
                 info!("Successfully connected to PostgreSQL database");
             }
             Err(_) => {
+                error!("Failed to connect to PostgreSQL database");
+
                 panic!("Failed to connect to PostgreSQL database");
             }
         }
@@ -42,40 +44,22 @@ impl Database {
         Self { pool }
     }
 
-    pub async fn insert<'a>(
+    pub async fn query<'a>(
         &self,
-        table: &str,
-        fields: &[&str],
-        values: &[&'a (dyn ToSql + Sync)],
-    ) -> Result<(), &'static str> {
-        if fields.is_empty() {
-            return Err("No fields provided");
-        }
-
-        if fields.len() != values.len() {
-            return Err("Field and value counts don't match");
-        }
-
+        query: &str,
+        params: &[&'a (dyn ToSql + Sync)],
+    ) -> Result<Vec<Row>, &'static str> {
         let client = match self.pool.get().await {
             Ok(client) => client,
             Err(_) => return Err("Failed to get database connection"),
         };
 
-        let placeholders: Vec<String> = (1..=fields.len()).map(|i| format!("${}", i)).collect();
-
-        let query = format!(
-            "INSERT INTO {} ({}) VALUES ({})",
-            table,
-            fields.join(", "),
-            placeholders.join(", ")
-        );
-
-        match client.execute(query.as_str(), values).await {
-            Ok(_) => Ok(()),
+        match client.query(query, params).await {
+            Ok(rows) => Ok(rows),
             Err(_) => {
-                error!("Failed to insert into {} table", table);
+                error!("Database query error");
 
-                Err("Failed to insert")
+                Err("Query execution failed")
             }
         }
     }

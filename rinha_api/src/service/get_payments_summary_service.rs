@@ -3,18 +3,18 @@ use tokio_postgres::{types::ToSql, Row};
 use tracing::error;
 
 use crate::{
-    database::Database,
-    dto::{PaymentMetricDTO, PaymentSummaryDTO},
+    dto::get_payments_summary::{PaymentMetricDTO, PaymentSummaryDTO},
+    infra::sql_database::SqlDatabase,
 };
 
 #[derive(Clone)]
-pub struct GetPaymentSummaryService {
-    database: Database,
+pub struct GetPaymentsSummaryService {
+    sql_database: SqlDatabase,
 }
 
-impl GetPaymentSummaryService {
-    pub fn new(database: Database) -> Self {
-        GetPaymentSummaryService { database }
+impl GetPaymentsSummaryService {
+    pub fn new(sql_database: SqlDatabase) -> Self {
+        Self { sql_database }
     }
 
     fn create_summary_query(
@@ -23,7 +23,7 @@ impl GetPaymentSummaryService {
         to: &Option<String>,
     ) -> (String, Vec<NaiveDateTime>) {
         let mut query = String::from(
-            "SELECT payment_processor, COUNT(1) as count, SUM(amount) as total_amount FROM payments",
+            "SELECT payment_processor, COUNT(1) AS count, SUM(amount) AS total_amount FROM payments",
         );
 
         let mut params = Vec::new();
@@ -37,11 +37,11 @@ impl GetPaymentSummaryService {
                 .or_else(|_| NaiveDateTime::parse_from_str(&from_date, "%Y-%m-%dT%H:%M:%S"));
 
             match parsed {
-                Ok(dt) => {
-                    from_parsed = Some(dt);
+                Ok(datetime) => {
+                    from_parsed = Some(datetime);
                 }
-                Err(e) => {
-                    error!("Failed to parse date `{}`: {}", from_date, e);
+                Err(_) => {
+                    error!("Failed to parse 'from' param to datetime");
                 }
             }
         }
@@ -54,11 +54,11 @@ impl GetPaymentSummaryService {
                 .or_else(|_| NaiveDateTime::parse_from_str(&to_date, "%Y-%m-%dT%H:%M:%S"));
 
             match parsed {
-                Ok(dt) => {
-                    to_parsed = Some(dt);
+                Ok(datetime) => {
+                    to_parsed = Some(datetime);
                 }
-                Err(e) => {
-                    error!("Failed to parse date `{}`: {}", to_date, e);
+                Err(_) => {
+                    error!("Failed to parse 'to' param to datetime");
                 }
             }
         }
@@ -68,7 +68,9 @@ impl GetPaymentSummaryService {
 
             if let Some(parsed_date) = from_parsed {
                 query.push_str(&format!(" requested_at >= ${}", param_index));
+
                 params.push(parsed_date);
+
                 param_index += 1;
             }
 
@@ -76,7 +78,9 @@ impl GetPaymentSummaryService {
                 if param_index > 1 {
                     query.push_str(" AND");
                 }
+
                 query.push_str(&format!(" requested_at <= ${}", param_index));
+
                 params.push(parsed_date);
             }
         }
@@ -123,7 +127,7 @@ impl GetPaymentSummaryService {
         let (query, params) = self.create_summary_query(&from, &to);
 
         let rows: Vec<Row> = self
-            .database
+            .sql_database
             .query(
                 &query,
                 &params

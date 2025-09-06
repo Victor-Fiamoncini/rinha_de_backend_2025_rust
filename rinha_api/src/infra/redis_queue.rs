@@ -3,26 +3,26 @@ use redis::{aio::ConnectionManager, AsyncCommands, Client};
 use crate::config::Config;
 
 #[derive(Clone)]
-pub struct Queue {
+pub struct RedisQueue {
     connection: ConnectionManager,
     name: &'static str,
 }
 
-impl Queue {
+impl RedisQueue {
     pub async fn new(config: Config, name: &'static str) -> Self {
-        let client = match Client::open(config.redis_url) {
+        let client = match Client::open(config.redis.url) {
             Ok(client) => client,
-            Err(_) => panic!("Failed to create Redis client"),
+            Err(_) => panic!("Failed to create Redis Client"),
         };
 
         let connection = ConnectionManager::new(client)
             .await
             .expect("Failed to create Redis ConnectionManager");
 
-        Queue { connection, name }
+        Self { connection, name }
     }
 
-    pub async fn enqueue(&self, message: String) -> Result<(), &'static str> {
+    pub async fn enqueue_right(&self, message: String) -> Result<(), &'static str> {
         let mut connection = self.connection.clone();
 
         match connection.rpush::<_, _, ()>(&self.name, message).await {

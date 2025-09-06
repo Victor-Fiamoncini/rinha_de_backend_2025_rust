@@ -5,7 +5,7 @@ use tracing::{error, info};
 
 use crate::{
     config::Config,
-    dto::{PaymentDTO, PaymentProcessor},
+    dto::{create_external_payment::PaymentProcessor, create_internal_payment::PaymentDTO},
 };
 
 #[derive(Clone)]
@@ -22,7 +22,7 @@ impl CreateExternalPaymentService {
             .build()
             .expect("Failed to create HTTP Client");
 
-        CreateExternalPaymentService {
+        Self {
             config,
             http_client,
         }

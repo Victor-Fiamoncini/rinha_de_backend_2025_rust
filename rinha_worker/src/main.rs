@@ -1,8 +1,7 @@
 mod config;
 mod consumer;
-mod database;
 mod dto;
-mod queue;
+mod infra;
 mod service;
 
 use std::time::Duration;
@@ -13,8 +12,7 @@ use tracing_subscriber;
 use crate::{
     config::Config,
     consumer::PaymentConsumer,
-    database::Database,
-    queue::Queue,
+    infra::{redis_queue::RedisQueue, sql_database::SqlDatabase},
     service::{CreateExternalPaymentService, CreateInternalPaymentService},
 };
 
@@ -24,8 +22,8 @@ async fn main() {
 
     let config = Config::new();
 
-    let pending_payments_queue = Queue::new(config.clone(), "@pending_payments_queue").await;
-    let completed_payments_database = Database::new(config.clone()).await;
+    let pending_payments_queue = RedisQueue::new(config.clone(), "@pending_payments_queue").await;
+    let completed_payments_database = SqlDatabase::new(config.clone()).await;
 
     let create_external_payment = CreateExternalPaymentService::new(config);
     let create_internal_payment = CreateInternalPaymentService::new(completed_payments_database);

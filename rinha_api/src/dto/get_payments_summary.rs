@@ -3,19 +3,12 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct CreatePaymentDTO {
-    #[serde(rename = "correlationId")]
-    pub correlation_id: String,
-    pub amount: f64,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
 pub struct GetPaymentsSummaryDTO {
     pub from: Option<String>,
     pub to: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PaymentMetricDTO {
     #[serde(rename = "totalRequests")]
     pub total_requests: u64,
@@ -31,13 +24,13 @@ impl PaymentMetricDTO {
     where
         S: serde::Serializer,
     {
-        let float_val = decimal.to_f64().unwrap_or(0.0);
+        let decimal_to_float_value = decimal.to_f64().unwrap_or(0.0);
 
-        serializer.serialize_f64(float_val)
+        serializer.serialize_f64(decimal_to_float_value)
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PaymentSummaryDTO {
     pub default: PaymentMetricDTO,
     pub fallback: PaymentMetricDTO,

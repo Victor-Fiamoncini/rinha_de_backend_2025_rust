@@ -4,16 +4,16 @@ use tokio_postgres::types::ToSql;
 use tracing::{error, info};
 use uuid::Uuid;
 
-use crate::{database::Database, dto::PaymentDTO};
+use crate::{dto::create_internal_payment::PaymentDTO, infra::sql_database::SqlDatabase};
 
 #[derive(Clone)]
 pub struct CreateInternalPaymentService {
-    database: Database,
+    sql_database: SqlDatabase,
 }
 
 impl CreateInternalPaymentService {
-    pub fn new(database: Database) -> Self {
-        CreateInternalPaymentService { database }
+    pub fn new(sql_database: SqlDatabase) -> Self {
+        Self { sql_database }
     }
 
     pub async fn execute(&self, payment: PaymentDTO) -> Result<(), &'static str> {
@@ -60,7 +60,7 @@ impl CreateInternalPaymentService {
             &requested_at,
         ];
 
-        match self.database.insert("payments", fields, values).await {
+        match self.sql_database.insert("payments", fields, values).await {
             Ok(_) => {
                 info!("Successfully created internal payment");
 

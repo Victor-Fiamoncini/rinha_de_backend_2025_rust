@@ -1,26 +1,30 @@
 mod create_payment_service;
-mod get_payment_summary_service;
+mod get_payments_summary_service;
 
 use crate::{
-    database::Database,
-    queue::Queue,
+    infra::{redis_queue::RedisQueue, sql_database::SqlDatabase},
     service::{
         create_payment_service::CreatePaymentService,
-        get_payment_summary_service::GetPaymentSummaryService,
+        get_payments_summary_service::GetPaymentsSummaryService,
     },
 };
 
 #[derive(Clone)]
 pub struct Services {
     pub create_payment_service: CreatePaymentService,
-    pub get_payment_summary_service: GetPaymentSummaryService,
+    pub get_payments_summary_service: GetPaymentsSummaryService,
 }
 
 impl Services {
-    pub fn new(completed_payments_database: Database, pending_payments_queue: Queue) -> Self {
+    pub fn new(
+        completed_payments_database: SqlDatabase,
+        pending_payments_queue: RedisQueue,
+    ) -> Self {
         Services {
             create_payment_service: CreatePaymentService::new(pending_payments_queue),
-            get_payment_summary_service: GetPaymentSummaryService::new(completed_payments_database),
+            get_payments_summary_service: GetPaymentsSummaryService::new(
+                completed_payments_database,
+            ),
         }
     }
 }

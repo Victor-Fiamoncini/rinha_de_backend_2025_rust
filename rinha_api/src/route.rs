@@ -7,7 +7,7 @@ use axum::{
 use serde_json::json;
 
 use crate::{
-    dto::{CreatePaymentDTO, GetPaymentsSummaryDTO},
+    dto::{create_payment::CreatePaymentDTO, get_payments_summary::GetPaymentsSummaryDTO},
     AppState,
 };
 
@@ -27,7 +27,7 @@ pub async fn get_payments_summary(
 ) -> impl IntoResponse {
     let summary = state
         .services
-        .get_payment_summary_service
+        .get_payments_summary_service
         .execute(query.from.clone(), query.to.clone())
         .await;
 

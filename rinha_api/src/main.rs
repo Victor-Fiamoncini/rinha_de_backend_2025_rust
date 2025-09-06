@@ -1,7 +1,6 @@
 mod config;
-mod database;
 mod dto;
-mod queue;
+mod infra;
 mod route;
 mod service;
 
@@ -16,8 +15,7 @@ use tracing_subscriber;
 
 use crate::{
     config::Config,
-    database::Database,
-    queue::Queue,
+    infra::{redis_queue::RedisQueue, sql_database::SqlDatabase},
     route::{create_payment, get_payments_summary},
     service::Services,
 };
@@ -33,8 +31,8 @@ async fn main() {
 
     let config = Config::new();
 
-    let completed_payments_database = Database::new(config.clone()).await;
-    let pending_payments_queue = Queue::new(config.clone(), "@pending_payments_queue").await;
+    let completed_payments_database = SqlDatabase::new(config.clone()).await;
+    let pending_payments_queue = RedisQueue::new(config.clone(), "@pending_payments_queue").await;
 
     let app_state = AppState {
         services: Arc::new(Services::new(

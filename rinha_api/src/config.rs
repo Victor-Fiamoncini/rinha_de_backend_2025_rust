@@ -1,16 +1,24 @@
 use std::env;
 
-use serde::{Deserialize, Serialize};
+#[derive(Clone, Debug)]
+pub struct PostgresConfig {
+    pub host: String,
+    pub port: u16,
+    pub db: String,
+    pub user: String,
+    pub password: String,
+}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug)]
+pub struct RedisConfig {
+    pub url: String,
+}
+
+#[derive(Clone, Debug)]
 pub struct Config {
     pub api_port: u16,
-    pub postgres_host: String,
-    pub postgres_port: u16,
-    pub postgres_db: String,
-    pub postgres_user: String,
-    pub postgres_password: String,
-    pub redis_url: String,
+    pub postgres: PostgresConfig,
+    pub redis: RedisConfig,
 }
 
 impl Config {
@@ -34,12 +42,14 @@ impl Config {
 
         Self {
             api_port,
-            postgres_host,
-            postgres_port,
-            postgres_db,
-            postgres_user,
-            postgres_password,
-            redis_url,
+            postgres: PostgresConfig {
+                host: postgres_host,
+                port: postgres_port,
+                db: postgres_db,
+                user: postgres_user,
+                password: postgres_password,
+            },
+            redis: RedisConfig { url: redis_url },
         }
     }
 }

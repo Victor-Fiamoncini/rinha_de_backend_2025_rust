@@ -4,8 +4,8 @@ use chrono::Utc;
 use tracing::info;
 
 use crate::{
-    dto::{PaymentDTO, PaymentProcessor},
-    queue::Queue,
+    dto::{create_external_payment::PaymentProcessor, create_internal_payment::PaymentDTO},
+    infra::redis_queue::RedisQueue,
     service::{CreateExternalPaymentService, CreateInternalPaymentService},
 };
 
@@ -15,16 +15,16 @@ const NUMBER_OF_WORKERS: usize = 5;
 pub struct PaymentConsumer {
     create_external_payment: CreateExternalPaymentService,
     create_internal_payment: CreateInternalPaymentService,
-    pending_payments_queue: Queue,
+    pending_payments_queue: RedisQueue,
 }
 
 impl PaymentConsumer {
     pub fn new(
         create_external_payment: CreateExternalPaymentService,
         create_internal_payment: CreateInternalPaymentService,
-        pending_payments_queue: Queue,
+        pending_payments_queue: RedisQueue,
     ) -> Self {
-        PaymentConsumer {
+        Self {
             create_external_payment,
             create_internal_payment,
             pending_payments_queue,
